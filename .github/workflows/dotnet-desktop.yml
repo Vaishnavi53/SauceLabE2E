@@ -69,20 +69,33 @@ jobs:
         $result = dotnet test --logger:"trx;LogFileName=test-results.trx" 2>&1 | Tee-Object -Variable output
         echo "$output" > test_results.txt
         if ($result -match "Failed!") {
-          echo "::set-output name=test_failed::true"
+          echo "TEST_FAILED=true" >> $GITHUB_ENV  # Set environment variable instead of set-output
         }
       continue-on-error: true  # Ensures workflow continues even if tests fail
 
     - name: Extract Failed Test Cases
-      if: steps.run_tests.outputs.test_failed == 'true'
+      if: env.TEST_FAILED == 'true'
       run: |
         $failedTests = Select-String -Path test_results.txt -Pattern "Failed\s+.*" | ForEach-Object { $_.Line }
         echo "FAILED TEST CASES:"
         echo "$failedTests"
         echo "$failedTests" > failed_tests.txt
 
+    - name: Capture Screenshot on Failure
+      if: env.TEST_FAILED == 'true'
+      run: |
+        mkdir -p screenshots
+        Get-ChildItem -Path . -Recurse | Where-Object { $_.Name -match "failed_screenshot.*\.png" } | Copy-Item -Destination screenshots/
+
+    - name: Upload Screenshot as Artifact
+      if: env.TEST_FAILED == 'true'
+      uses: actions/upload-artifact@v3
+      with:
+        name: failed-test-screenshots
+        path: screenshots/
+
     - name: Send Email Notification if Tests Fail
-      if: steps.run_tests.outputs.test_failed == 'true'
+      if: env.TEST_FAILED == 'true'
       uses: dawidd6/action-send-mail@v3
       with:
         server_address: smtp.gmail.com
@@ -95,6 +108,9 @@ jobs:
           
           $(cat failed_tests.txt)
           
+          Screenshots of failures are attached in GitHub Artifacts.
+          
           Check the GitHub Actions logs for more details.
         to: "${{ secrets.EMAIL_TO }}"
-        from: "${{ secrets.EMAIL_FROM }}"
+        from: "${{ secrets.EMAIL_FROM }}"  # Fix: Ensure 'from' is correctly passed
+        attachments: "screenshots/*"

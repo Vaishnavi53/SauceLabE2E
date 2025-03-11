@@ -32,16 +32,14 @@ jobs:
         $ErrorActionPreference = "Continue"  # Prevent stopping execution on failure
         $result = dotnet test --logger:"trx;LogFileName=test-results.trx" 2>&1 | Tee-Object -Variable output
         echo "$output" > test_results.txt
-
-        # Match test failures
-        if ($output -match "Failed:") {
+        if ($result -match "Failed!") {
           echo "TEST_FAILED=true" >> $env:GITHUB_ENV  # Set environment variable
         }
-        exit 0  # Forces script to continue instead of stopping GitHub Actions
       continue-on-error: true  # Ensures workflow continues even if tests fail
 
     - name: Debug Check if Tests Failed
-      run: echo "Test failure flag: ${{ env.TEST_FAILED }}"
+      shell: pwsh
+      run: echo "Test failure flag: $env:TEST_FAILED"
 
     - name: Extract Failed Test Cases
       if: env.TEST_FAILED == 'true'
@@ -54,6 +52,7 @@ jobs:
 
     - name: Capture Screenshot on Failure
       if: env.TEST_FAILED == 'true'
+      shell: pwsh
       run: |
         mkdir -p screenshots
         Get-ChildItem -Path . -Recurse | Where-Object { $_.Name -match "failed_screenshot.*\.png" } | Copy-Item -Destination screenshots/

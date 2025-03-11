@@ -36,7 +36,7 @@
 # For a complete CI/CD sample to get started with GitHub Action workflows for Desktop Applications,
 # refer to https://github.com/microsoft/github-actions-for-desktop-apps
 
-name: Run Automation Tests
+name: Run Automation Tests and Send Email on Failure
 
 on:
   push:
@@ -63,7 +63,7 @@ jobs:
     - name: Build the Project
       run: dotnet build --configuration Release
 
-    - name: Run Automation Tests and Capture Failed Tests
+    - name: Run Automation Tests and Capture Failures
       id: run_tests
       run: |
         $result = dotnet test --logger:"trx;LogFileName=test-results.trx" 2>&1 | Tee-Object -Variable output
@@ -80,7 +80,7 @@ jobs:
         echo "$failedTests"
         echo "$failedTests" > failed_tests.txt
 
-    - name: Send Email if Tests Fail
+    - name: Send Email Notification if Tests Fail
       if: steps.run_tests.outputs.test_failed == 'true'
       uses: dawidd6/action-send-mail@v3
       with:
@@ -88,7 +88,7 @@ jobs:
         server_port: 465
         username: ${{ secrets.EMAIL_USERNAME }}
         password: ${{ secrets.EMAIL_PASSWORD }}
-        subject: "Automation Tests Failed"
+        subject: "Automation Tests Failed "
         body: |
           The following test cases failed:
           
@@ -97,4 +97,3 @@ jobs:
           Check the GitHub Actions logs for more details.
         to: "your-email@example.com"
         from: "GitHub Actions"
-

@@ -95,5 +95,5 @@ jobs:
           $(cat failed_tests.txt)
           
           Check the GitHub Actions logs for more details.
-        to: "your-email@example.com"
-        from: "GitHub Actions"
+        to: "${{ secrets.EMAIL_TO }}"
+        from: "${{ secrets.EMAIL_FROM }}"

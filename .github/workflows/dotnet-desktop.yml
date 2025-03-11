@@ -63,39 +63,38 @@ jobs:
     - name: Build the Project
       run: dotnet build --configuration Release
 
-   - name: Run Automation Tests and Capture Failures
-  id: run_tests
-  run: |
-    $result = dotnet test --logger:"trx;LogFileName=test-results.trx" 2>&1 | Tee-Object -Variable output
-    echo "$output" > test_results.txt
-    if ($result -match "Failed!") {
-      echo "::set-output name=test_failed::true"
-    }
-  continue-on-error: true # Allows the workflow to continue even if tests fail
+    - name: Run Automation Tests and Capture Failures
+      id: run_tests
+      run: |
+        $result = dotnet test --logger:"trx;LogFileName=test-results.trx" 2>&1 | Tee-Object -Variable output
+        echo "$output" > test_results.txt
+        if ($result -match "Failed!") {
+          echo "::set-output name=test_failed::true"
+        }
+      continue-on-error: true  # Ensures workflow continues even if tests fail
 
-- name: Extract Failed Test Cases
-  if: steps.run_tests.outputs.test_failed == 'true'
-  run: |
-    $failedTests = Select-String -Path test_results.txt -Pattern "Failed\s+.*" | ForEach-Object { $_.Line }
-    echo "FAILED TEST CASES:"
-    echo "$failedTests"
-    echo "$failedTests" > failed_tests.txt
+    - name: Extract Failed Test Cases
+      if: steps.run_tests.outputs.test_failed == 'true'
+      run: |
+        $failedTests = Select-String -Path test_results.txt -Pattern "Failed\s+.*" | ForEach-Object { $_.Line }
+        echo "FAILED TEST CASES:"
+        echo "$failedTests"
+        echo "$failedTests" > failed_tests.txt
 
-- name: Send Email Notification if Tests Fail
-  if: steps.run_tests.outputs.test_failed == 'true'
-  uses: dawidd6/action-send-mail@v3
-  with:
-    server_address: smtp.gmail.com
-    server_port: 465
-    username: ${{ secrets.EMAIL_USERNAME }}
-    password: ${{ secrets.EMAIL_PASSWORD }}
-    subject: "Automation Tests Failed "
-    body: |
-      The following test cases failed:
-      
-      $(cat failed_tests.txt)
-      
-      Check the GitHub Actions logs for more details.
-    to: "${{ secrets.EMAIL_TO }}"
-    from: "${{ secrets.EMAIL_FROM }}"
-
+    - name: Send Email Notification if Tests Fail
+      if: steps.run_tests.outputs.test_failed == 'true'
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        username: ${{ secrets.EMAIL_USERNAME }}
+        password: ${{ secrets.EMAIL_PASSWORD }}
+        subject: "Automation Tests Failed"
+        body: |
+          The following test cases failed:
+          
+          $(cat failed_tests.txt)
+          
+          Check the GitHub Actions logs for more details.
+        to: "${{ secrets.EMAIL_TO }}"
+        from: "${{ secrets.EMAIL_FROM }}"

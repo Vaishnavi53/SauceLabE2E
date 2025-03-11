@@ -66,12 +66,15 @@ jobs:
     - name: Run Automation Tests and Capture Failures
       id: run_tests
       run: |
+        $ErrorActionPreference = "Continue"  # Prevents stopping execution on failure
         $result = dotnet test --logger:"trx;LogFileName=test-results.trx" 2>&1 | Tee-Object -Variable output
         echo "$output" > test_results.txt
         if ($result -match "Failed!") {
-          echo "TEST_FAILED=true" >> $GITHUB_ENV  # Set environment variable instead of set-output
+          echo "TEST_FAILED=true" >> $GITHUB_ENV  # Set environment variable
         }
-      continue-on-error: true  # Ensures workflow continues even if tests fail
+        exit 0  # Forces script to continue instead of stopping GitHub Actions
+      continue-on-error: true  # Allows workflow to continue even if tests fail
+
 
     - name: Extract Failed Test Cases
       if: env.TEST_FAILED == 'true'

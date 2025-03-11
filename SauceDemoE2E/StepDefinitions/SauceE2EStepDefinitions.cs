@@ -122,11 +122,22 @@ namespace SauceDemoE2E.StepDefinitions
             _checkout.finish();
         }
 
-        [Then(@"the message Thank you for your order! should be displayed")]
-        public void ThenTheMessageThankYouForYourOrderShouldBeDisplayed()
+        [When(@"the message Thank you for your order! should be displayed")]
+        public void WhenTheMessageThankYouForYourOrderShouldBeDisplayed()
         {
+
+            _checkout.messagedisplay("Thank you for your order!") ;
+        }
         
-         _checkout.messagedisplay("Thank you for your order!") ;
+        [Then(@"an unnecessary action is performed")]
+        public void ThenAnUnnecessaryActionIsPerformed()
+        {
+            _driver.FindElement(By.Id("finish")).Click();
+
+            // Introduce a failure at the end
+            throw new Exception("Intentional Failure: Testing GitHub Actions!");
         }
     }
+
+    
 }

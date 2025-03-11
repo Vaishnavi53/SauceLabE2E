@@ -30,7 +30,9 @@ Scenario: cCompleting checkout
 	And enters "<first name>"  "<last name>" and "<postal code>"
 	And user continues by clicking continue
 	And user click finish
-	Then the message Thank you for your order! should be displayed 
+	And the message Thank you for your order! should be displayed 
+	Then an unnecessary action is performed
+
 Examples: 
 | first name | last name   | postal code |
 | vaishnavi  | manjalagiri | 671552      |

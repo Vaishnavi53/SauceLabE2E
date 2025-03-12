@@ -84,6 +84,6 @@ jobs:
             Screenshots of failures are attached in GitHub Artifacts.
             
             Check the GitHub Actions logs for more details.
-          to: "${{ secrets.EMAIL_TO }}"
+          to: "vaishnavimbhat03@gmail.com"
           from: "vaishnavimanjalagiri@gmail.com"
           attachments: "screenshots/*"  

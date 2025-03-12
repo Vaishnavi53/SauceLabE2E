@@ -79,7 +79,7 @@ jobs:
           body: |
             The following test cases failed:
             
-            $(cat failed_tests.txt)
+            ${{ env.FAILED_TESTS_CONTENT }}
             
             Screenshots of failures are attached in GitHub Artifacts.
             

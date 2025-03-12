@@ -29,33 +29,42 @@ jobs:
       id: run_tests
       shell: pwsh
       run: |
-        $ErrorActionPreference = "Continue"  # Prevent stopping execution on failure
+        $ErrorActionPreference = "Continue"  
         $result = dotnet test --logger:"trx;LogFileName=test-results.trx" 2>&1 | Tee-Object -Variable output
         echo "$output" > test_results.txt
-        if ($result -match "Failed!") {
-          echo "TEST_FAILED=true" >> $env:GITHUB_ENV  # Set environment variable
+        if ($output -match "Failed\s*:\s*\d+") { 
+          echo "TEST_FAILED=true" >> $env:GITHUB_ENV  
         }
-      continue-on-error: true  # Ensures workflow continues even if tests fail
+      continue-on-error: true
 
     - name: Debug Check if Tests Failed
       shell: pwsh
-      run: echo "Test failure flag: $env:TEST_FAILED"
+      run: echo "Test failure flag is: '${{ env.TEST_FAILED }}'"
 
     - name: Extract Failed Test Cases
+      id: extract_tests
       if: env.TEST_FAILED == 'true'
       shell: pwsh
       run: |
-        $failedTests = Select-String -Path test_results.txt -Pattern "Failed\s+.*" | ForEach-Object { $_.Line }
+        $failedTests = Select-String -Path test_results.txt -Pattern "(?<=Failed:\s).*" | ForEach-Object { $_.Line }
         echo "FAILED TEST CASES:"
         echo "$failedTests"
-        echo "$failedTests" > failed_tests.txt
+        echo "failed_tests=$failedTests" >> $env:GITHUB_ENV
+        if ($failedTests) {
+          echo "$failedTests" > failed_tests.txt
+        }
 
     - name: Capture Screenshot on Failure
       if: env.TEST_FAILED == 'true'
       shell: pwsh
       run: |
-        mkdir -p screenshots
-        Get-ChildItem -Path . -Recurse | Where-Object { $_.Name -match "failed_screenshot.*\.png" } | Copy-Item -Destination screenshots/
+        New-Item -ItemType Directory -Path screenshots -Force
+        $screenshots = Get-ChildItem -Path . -Recurse | Where-Object { $_.Name -match "failed_screenshot.*\.png" }
+        if ($screenshots) {
+          $screenshots | Copy-Item -Destination screenshots/
+        } else {
+          echo "No screenshots found for failed tests."
+        }
 
     - name: Upload Screenshot as Artifact
       if: env.TEST_FAILED == 'true'
@@ -75,11 +84,11 @@ jobs:
         subject: "Automation Tests Failed"
         body: |
           The following test cases failed:
-          
-          $(cat failed_tests.txt)
+
+          ${{ env.failed_tests }}
           
           Screenshots of failures are attached in GitHub Artifacts.
-          
+
           Check the GitHub Actions logs for more details.
         to: "${{ secrets.EMAIL_TO }}"
         from: "${{ secrets.EMAIL_FROM }}"

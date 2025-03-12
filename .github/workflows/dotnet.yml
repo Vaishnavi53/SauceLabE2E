@@ -57,7 +57,8 @@ jobs:
         shell: pwsh
         run: |
           mkdir -p screenshots
-          Get-ChildItem -Path . -Recurse | Where-Object { $_.Name -match "failed_screenshot.*\.png" } | Copy-Item -Destination screenshots/
+          Get-ChildItem -Path . -Recurse -Filter "*.png" | Copy-Item -Destination screenshots/
+
 
       - name: Upload Screenshot as Artifact
         if: env.TEST_FAILED == 'true'
